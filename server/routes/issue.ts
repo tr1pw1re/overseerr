@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { FindOneOptions, getRepository } from 'typeorm';
+import { getRepository } from 'typeorm';
 import { IssueStatus } from '../constants/issue';
 import Issue from '../entity/Issue';
 import IssueComment from '../entity/IssueComment';
@@ -21,32 +21,45 @@ issueRoutes.get<Record<string, string>, IssueResultsResponse>(
     ],
     { type: 'or' }
   ),
-  async (req, res, next) => {
-    // Satisfy typescript here. User is set, we assure you!
-    if (!req.user) {
-      return next({ status: 500, message: 'User missing from request.' });
-    }
-
+  async (req, res) => {
     const pageSize = req.query.take ? Number(req.query.take) : 10;
     const skip = req.query.skip ? Number(req.query.skip) : 0;
 
-    let order: FindOneOptions<Issue>['order'];
+    let sortFilter: string;
 
     switch (req.query.sort) {
       case 'modified':
-        order = { updatedAt: 'DESC' };
+        sortFilter = 'issue.updatedAt';
         break;
       default:
-        order = { createdAt: 'DESC' };
+        sortFilter = 'issue.createdAt';
     }
 
-    const issueRepository = getRepository(Issue);
+    let statusFilter: IssueStatus[];
 
-    const [issues, issueCount] = await issueRepository.findAndCount({
-      order,
-      skip,
-      take: pageSize,
-    });
+    switch (req.query.filter) {
+      case 'open':
+        statusFilter = [IssueStatus.OPEN];
+        break;
+      case 'resolved':
+        statusFilter = [IssueStatus.RESOLVED];
+        break;
+      default:
+        statusFilter = [IssueStatus.OPEN, IssueStatus.RESOLVED];
+    }
+
+    const [issues, issueCount] = await getRepository(Issue)
+      .createQueryBuilder('issue')
+      .leftJoinAndSelect('issue.createdBy', 'createdBy')
+      .leftJoinAndSelect('issue.media', 'media')
+      .leftJoinAndSelect('issue.modifiedBy', 'modifiedBy')
+      .where('issue.status IN (:...issueStatus)', {
+        issueStatus: statusFilter,
+      })
+      .orderBy(sortFilter, 'DESC')
+      .take(pageSize)
+      .skip(skip)
+      .getManyAndCount();
 
     return res.status(200).json({
       pageInfo: {

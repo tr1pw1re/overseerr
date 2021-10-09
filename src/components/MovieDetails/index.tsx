@@ -339,6 +339,7 @@ const MovieDetails: React.FC<MovieDetailsProps> = ({ movie }) => {
               className="ml-2 first:ml-0"
               onClick={() => setShowManager(true)}
             >
+              <CogIcon className="!mr-0" />
               {(
                 data.mediaInfo?.issues.filter(
                   (issue) => issue.status === IssueStatus.OPEN
@@ -349,7 +350,6 @@ const MovieDetails: React.FC<MovieDetailsProps> = ({ movie }) => {
                   <div className="absolute w-3 h-3 bg-red-600 rounded-full -right-1 -top-1 animate-ping" />
                 </>
               )}
-              <CogIcon />
             </Button>
           )}
         </div>
