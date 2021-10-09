@@ -1,15 +1,19 @@
 import { RadioGroup } from '@headlessui/react';
 import { ExclamationIcon } from '@heroicons/react/outline';
+import { ArrowCircleRightIcon } from '@heroicons/react/solid';
 import axios from 'axios';
 import { Field, Formik } from 'formik';
+import Link from 'next/link';
 import React from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
+import type Issue from '../../../../server/entity/Issue';
 import { MovieDetails } from '../../../../server/models/Movie';
 import { TvDetails } from '../../../../server/models/Tv';
 import globalMessages from '../../../i18n/globalMessages';
+import Button from '../../Common/Button';
 import Modal from '../../Common/Modal';
 import { issueOptions } from '../constants';
 
@@ -25,6 +29,8 @@ const messages = defineMessages({
   problemseason: 'Problem Season',
   problemepisode: 'Problem Episode',
   toastSuccessCreate: 'Created an issue for <strong>{title}</strong>',
+  toastFailedCreate: 'Something went wrong while creating the issue.',
+  toastviewissue: 'View Issue',
   reportissue: 'Report an Issue',
   submitissue: 'Submit Issue',
 });
@@ -75,7 +81,7 @@ const CreateIssueModal: React.FC<CreateIssueModalProps> = ({
       validationSchema={CreateIssueModalSchema}
       onSubmit={async (values) => {
         try {
-          await axios.post('/api/v1/issue', {
+          const newIssue = await axios.post<Issue>('/api/v1/issue', {
             issueType: values.selectedIssue.issueType,
             message: values.message,
             mediaId: data?.mediaInfo?.id,
@@ -86,9 +92,22 @@ const CreateIssueModal: React.FC<CreateIssueModalProps> = ({
 
           if (data) {
             addToast(
-              intl.formatMessage(messages.toastSuccessCreate, {
-                title: isMovie(data) ? data.title : data.name,
-              }),
+              <>
+                <div>
+                  {intl.formatMessage(messages.toastSuccessCreate, {
+                    title: isMovie(data) ? data.title : data.name,
+                    strong: function strong(msg) {
+                      return <strong>{msg}</strong>;
+                    },
+                  })}
+                </div>
+                <Link href={`/issues/${newIssue.data.id}`}>
+                  <Button as="a" className="mt-4">
+                    <span>{intl.formatMessage(messages.toastviewissue)}</span>
+                    <ArrowCircleRightIcon />
+                  </Button>
+                </Link>
+              </>,
               {
                 appearance: 'success',
                 autoDismiss: true,
@@ -100,6 +119,10 @@ const CreateIssueModal: React.FC<CreateIssueModalProps> = ({
             onCancel();
           }
         } catch (e) {
+          addToast(intl.formatMessage(messages.toastFailedCreate), {
+            appearance: 'error',
+            autoDismiss: true,
+          });
           console.log(e);
         }
       }}
