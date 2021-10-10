@@ -33,8 +33,6 @@ const messages = defineMessages({
   markavailable: 'Mark as Available',
   mark4kavailable: 'Mark as Available in 4K',
   allseasonsmarkedavailable: '* All seasons will be marked as available.',
-  radarr: 'Radarr',
-  sonarr: 'Sonarr',
   // Recreated here for lowercase versions to go with the modal clear media warning
   movie: 'movie',
   tvshow: 'series',
@@ -218,11 +216,7 @@ const ManageSlideOver: React.FC<
                           ? globalMessages.movie
                           : globalMessages.tvshow
                       ),
-                      arr: intl.formatMessage(
-                        mediaType === 'movie'
-                          ? messages.radarr
-                          : messages.sonarr
-                      ),
+                      arr: mediaType === 'movie' ? 'Radarr' : 'Sonarr',
                     })}
                   </span>
                 </Button>
@@ -243,11 +237,7 @@ const ManageSlideOver: React.FC<
                           ? globalMessages.movie
                           : globalMessages.tvshow
                       ),
-                      arr: intl.formatMessage(
-                        mediaType === 'movie'
-                          ? messages.radarr
-                          : messages.sonarr
-                      ),
+                      arr: mediaType === 'movie' ? 'Radarr' : 'Sonarr',
                     })}
                   </span>
                 </Button>
