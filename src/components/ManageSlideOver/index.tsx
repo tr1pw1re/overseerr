@@ -6,6 +6,7 @@ import {
 import axios from 'axios';
 import React from 'react';
 import { defineMessages, useIntl } from 'react-intl';
+import { IssueStatus } from '../../../server/constants/issue';
 import { MediaStatus } from '../../../server/constants/media';
 import { MovieDetails } from '../../../server/models/Movie';
 import { TvDetails } from '../../../server/models/Tv';
@@ -164,14 +165,16 @@ const ManageSlideOver: React.FC<
           <h3 className="mb-2 text-xl">Open Issues</h3>
           <div className="mb-4 overflow-hidden bg-gray-600 rounded-md shadow">
             <ul>
-              {data.mediaInfo?.issues?.map((issue) => (
-                <li
-                  key={`manage-issue-${issue.id}`}
-                  className="border-b border-gray-700 last:border-b-0"
-                >
-                  <IssueBlock issue={issue} />
-                </li>
-              ))}
+              {data.mediaInfo?.issues
+                ?.filter((issue) => issue.status === IssueStatus.OPEN)
+                .map((issue) => (
+                  <li
+                    key={`manage-issue-${issue.id}`}
+                    className="border-b border-gray-700 last:border-b-0"
+                  >
+                    <IssueBlock issue={issue} />
+                  </li>
+                ))}
             </ul>
           </div>
         </>
