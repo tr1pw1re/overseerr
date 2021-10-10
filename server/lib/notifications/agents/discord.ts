@@ -145,7 +145,7 @@ class DiscordAgent
 
       if (payload.issue.media.mediaType === MediaType.TV) {
         fields.push({
-          name: 'Problem Season',
+          name: 'Affected Season',
           value:
             payload.issue.problemSeason > 0
               ? `Season ${payload.issue.problemSeason}`
@@ -154,7 +154,7 @@ class DiscordAgent
 
         if (payload.issue.problemSeason > 0) {
           fields.push({
-            name: 'Problem Episode',
+            name: 'Affected Episode',
             value:
               payload.issue.problemEpisode > 0
                 ? `Episode ${payload.issue.problemEpisode}`

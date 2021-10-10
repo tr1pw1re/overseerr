@@ -33,7 +33,7 @@ export class IssueSubscriber implements EntitySubscriberInterface<Issue> {
     const [firstComment] = entity.comments;
 
     notificationManager.sendNotification(Notification.ISSUE_CREATED, {
-      subject: `Issue Created: ${title}`,
+      subject: title,
       message: firstComment.message,
       issue: entity,
       image,

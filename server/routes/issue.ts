@@ -21,9 +21,10 @@ issueRoutes.get<Record<string, string>, IssueResultsResponse>(
     ],
     { type: 'or' }
   ),
-  async (req, res) => {
+  async (req, res, next) => {
     const pageSize = req.query.take ? Number(req.query.take) : 10;
     const skip = req.query.skip ? Number(req.query.skip) : 0;
+    const createdBy = req.query.createdBy ? Number(req.query.createdBy) : null;
 
     let sortFilter: string;
 
@@ -48,14 +49,34 @@ issueRoutes.get<Record<string, string>, IssueResultsResponse>(
         statusFilter = [IssueStatus.OPEN, IssueStatus.RESOLVED];
     }
 
-    const [issues, issueCount] = await getRepository(Issue)
+    let query = getRepository(Issue)
       .createQueryBuilder('issue')
       .leftJoinAndSelect('issue.createdBy', 'createdBy')
       .leftJoinAndSelect('issue.media', 'media')
       .leftJoinAndSelect('issue.modifiedBy', 'modifiedBy')
       .where('issue.status IN (:...issueStatus)', {
         issueStatus: statusFilter,
-      })
+      });
+
+    if (
+      !req.user?.hasPermission(
+        [Permission.MANAGE_ISSUES, Permission.VIEW_ISSUES],
+        { type: 'or' }
+      )
+    ) {
+      if (createdBy && createdBy !== req.user?.id) {
+        return next({
+          status: 403,
+          message:
+            'You do not have permission to view issues created by other users',
+        });
+      }
+      query = query.andWhere('createdBy.id = :id', { id: req.user?.id });
+    } else if (createdBy) {
+      query = query.andWhere('createdBy.id = :id', { id: createdBy });
+    }
+
+    const [issues, issueCount] = await query
       .orderBy(sortFilter, 'DESC')
       .take(pageSize)
       .skip(skip)

@@ -10,6 +10,7 @@ import { MediaStatus } from '../../../server/constants/media';
 import { MovieDetails } from '../../../server/models/Movie';
 import { TvDetails } from '../../../server/models/Tv';
 import useSettings from '../../hooks/useSettings';
+import { Permission, useUser } from '../../hooks/useUser';
 import globalMessages from '../../i18n/globalMessages';
 import Button from '../Common/Button';
 import ConfirmButton from '../Common/ConfirmButton';
@@ -19,21 +20,23 @@ import IssueBlock from '../IssueBlock';
 import RequestBlock from '../RequestBlock';
 
 const messages = defineMessages({
-  manageModalMovieTitle: 'Manage Movie',
-  manageModalTvTitle: 'Manage Series',
+  manageModalTitle: 'Manage {mediaType}',
   manageModalRequests: 'Requests',
   manageModalNoRequests: 'No requests.',
   manageModalClearMedia: 'Clear Media Data',
   manageModalClearMediaWarning:
-    '* This will irreversibly remove all data for this series, including any requests. If this item exists in your Plex library, the media information will be recreated during the next scan.',
-  opensonarr: 'Open Series in Sonarr',
-  opensonarr4k: 'Open Series in 4K Sonarr',
-  openradarr: 'Open Movie in Radarr',
-  openradarr4k: 'Open Movie in 4K Radarr',
+    '* This will irreversibly remove all data for this {mediaType}, including any requests. If this item exists in your Plex library, the media information will be recreated during the next scan.',
+  openarr: 'Open {mediaType} in {arr}',
+  openarr4k: 'Open {mediaType} in 4K {arr}',
   downloadstatus: 'Download Status',
   markavailable: 'Mark as Available',
   mark4kavailable: 'Mark as Available in 4K',
   allseasonsmarkedavailable: '* All seasons will be marked as available.',
+  radarr: 'Radarr',
+  sonarr: 'Sonarr',
+  // Recreated here for lowercase versions to go with the modal clear media warning
+  movie: 'movie',
+  tvshow: 'series',
 });
 
 const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
@@ -60,6 +63,7 @@ interface ManageSlideOverTvProps extends ManageSlideOverProps {
 const ManageSlideOver: React.FC<
   ManageSlideOverMovieProps | ManageSlideOverTvProps
 > = ({ show, mediaType, onClose, data, revalidate }) => {
+  const { hasPermission } = useUser();
   const intl = useIntl();
   const settings = useSettings();
 
@@ -80,11 +84,11 @@ const ManageSlideOver: React.FC<
   return (
     <SlideOver
       show={show}
-      title={intl.formatMessage(
-        mediaType === 'movie'
-          ? messages.manageModalMovieTitle
-          : messages.manageModalTvTitle
-      )}
+      title={intl.formatMessage(messages.manageModalTitle, {
+        mediaType: intl.formatMessage(
+          mediaType === 'movie' ? globalMessages.movie : globalMessages.tvshow
+        ),
+      })}
       onClose={() => onClose()}
       subText={isMovie(data) ? data.title : data.name}
     >
@@ -192,47 +196,62 @@ const ManageSlideOver: React.FC<
           )}
         </ul>
       </div>
-      {(data?.mediaInfo?.serviceUrl || data?.mediaInfo?.serviceUrl4k) && (
-        <div className="mt-8">
-          {data?.mediaInfo?.serviceUrl && (
-            <a
-              href={data?.mediaInfo?.serviceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="block mb-2 last:mb-0"
-            >
-              <Button buttonType="ghost" className="w-full">
-                <ExternalLinkIcon />
-                <span>
-                  {intl.formatMessage(
-                    mediaType === 'movie'
-                      ? messages.openradarr
-                      : messages.opensonarr
-                  )}
-                </span>
-              </Button>
-            </a>
-          )}
-          {data?.mediaInfo?.serviceUrl4k && (
-            <a
-              href={data?.mediaInfo?.serviceUrl4k}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Button buttonType="ghost" className="w-full">
-                <ExternalLinkIcon />
-                <span>
-                  {intl.formatMessage(
-                    mediaType === 'movie'
-                      ? messages.openradarr4k
-                      : messages.opensonarr4k
-                  )}
-                </span>
-              </Button>
-            </a>
-          )}
-        </div>
-      )}
+      {hasPermission(Permission.ADMIN) &&
+        (data?.mediaInfo?.serviceUrl || data?.mediaInfo?.serviceUrl4k) && (
+          <div className="mt-8">
+            {data?.mediaInfo?.serviceUrl && (
+              <a
+                href={data?.mediaInfo?.serviceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="block mb-2 last:mb-0"
+              >
+                <Button buttonType="ghost" className="w-full">
+                  <ExternalLinkIcon />
+                  <span>
+                    {intl.formatMessage(messages.openarr, {
+                      mediaType: intl.formatMessage(
+                        mediaType === 'movie'
+                          ? globalMessages.movie
+                          : globalMessages.tvshow
+                      ),
+                      arr: intl.formatMessage(
+                        mediaType === 'movie'
+                          ? messages.radarr
+                          : messages.sonarr
+                      ),
+                    })}
+                  </span>
+                </Button>
+              </a>
+            )}
+            {data?.mediaInfo?.serviceUrl4k && (
+              <a
+                href={data?.mediaInfo?.serviceUrl4k}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Button buttonType="ghost" className="w-full">
+                  <ExternalLinkIcon />
+                  <span>
+                    {intl.formatMessage(messages.openarr4k, {
+                      mediaType: intl.formatMessage(
+                        mediaType === 'movie'
+                          ? globalMessages.movie
+                          : globalMessages.tvshow
+                      ),
+                      arr: intl.formatMessage(
+                        mediaType === 'movie'
+                          ? messages.radarr
+                          : messages.sonarr
+                      ),
+                    })}
+                  </span>
+                </Button>
+              </a>
+            )}
+          </div>
+        )}
       {data?.mediaInfo && (
         <div className="mt-8">
           <ConfirmButton
@@ -244,7 +263,11 @@ const ManageSlideOver: React.FC<
             <span>{intl.formatMessage(messages.manageModalClearMedia)}</span>
           </ConfirmButton>
           <div className="mt-3 text-xs text-gray-400">
-            {intl.formatMessage(messages.manageModalClearMediaWarning)}
+            {intl.formatMessage(messages.manageModalClearMediaWarning, {
+              mediaType: intl.formatMessage(
+                mediaType === 'movie' ? messages.movie : messages.tvshow
+              ),
+            })}
           </div>
         </div>
       )}

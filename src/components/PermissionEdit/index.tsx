@@ -50,11 +50,11 @@ export const messages = defineMessages({
   viewrequests: 'View Requests',
   viewrequestsDescription: "Grant permission to view other users' requests.",
   manageissues: 'Manage Issues',
-  manageissuesDescription: 'Grants permission to manage Overseerr issues.',
+  manageissuesDescription: 'Grant permission to manage Overseerr issues.',
   createissues: 'Create Issues',
-  createissuesDescription: 'Grants permission to create new issues.',
+  createissuesDescription: 'Grant permission to create new issues.',
   viewissues: 'View Issues',
-  viewissuesDescription: "Grants permission to view other users' issues.",
+  viewissuesDescription: "Grant permission to view other users' issues.",
 });
 
 interface PermissionEditProps {
