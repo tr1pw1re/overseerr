@@ -668,7 +668,10 @@ requestRoutes.delete('/:requestId', async (req, res, next) => {
 
     return res.status(204).send();
   } catch (e) {
-    logger.error(e.message);
+    logger.error('Something went wrong deleting a request.', {
+      label: 'API',
+      errorMessage: e.message,
+    });
     next({ status: 404, message: 'Request not found.' });
   }
 });

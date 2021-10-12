@@ -5294,6 +5294,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Issue'
+    delete:
+      summary: Delete issue
+      description: Removes an issue. If the user has the `MANAGE_ISSUES` permission, any issue can be removed. Otherwise, only a users own issues can be removed.
+      tags:
+        - issue
+      parameters:
+        - in: path
+          name: issueId
+          description: Issue ID
+          required: true
+          example: '1'
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Succesfully removed issue
   /issue/{issueId}/comment:
     post:
       summary: Create a comment

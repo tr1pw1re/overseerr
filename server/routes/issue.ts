@@ -291,4 +291,35 @@ issueRoutes.post<{ issueId: string; status: string }, Issue>(
   }
 );
 
+issueRoutes.delete('/:issueId', async (req, res, next) => {
+  const issueRepository = getRepository(Issue);
+
+  try {
+    const issue = await issueRepository.findOneOrFail({
+      where: { id: Number(req.params.issueId) },
+      relations: ['createdBy'],
+    });
+
+    if (
+      !req.user?.hasPermission(Permission.MANAGE_ISSUES) &&
+      issue.createdBy.id !== req.user?.id
+    ) {
+      return next({
+        status: 401,
+        message: 'You do not have permission to delete this issue.',
+      });
+    }
+
+    await issueRepository.remove(issue);
+
+    return res.status(204).send();
+  } catch (e) {
+    logger.error('Something went wrong deleting an issue.', {
+      label: 'API',
+      errorMessage: e.message,
+    });
+    next({ status: 404, message: 'Issue not found.' });
+  }
+});
+
 export default issueRoutes;

@@ -1,6 +1,7 @@
 import {
   ChatIcon,
   CheckCircleIcon,
+  ExclamationIcon,
   ExternalLinkIcon,
   SearchIcon,
 } from '@heroicons/react/outline';
@@ -9,7 +10,7 @@ import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import React from 'react';
+import React, { useState } from 'react';
 import { defineMessages, FormattedRelativeTime, useIntl } from 'react-intl';
 import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
@@ -26,8 +27,10 @@ import Badge from '../Common/Badge';
 import Button from '../Common/Button';
 import CachedImage from '../Common/CachedImage';
 import LoadingSpinner from '../Common/LoadingSpinner';
+import Modal from '../Common/Modal';
 import PageTitle from '../Common/PageTitle';
 import { issueOptions } from '../IssueModal/constants';
+import Transition from '../Transition';
 import IssueComment from './IssueComment';
 import IssueDescription from './IssueDescription';
 
@@ -57,6 +60,11 @@ const messages = defineMessages({
   problemepisode: 'Problem Episode',
   allepisodes: 'All Episodes',
   episode: 'Episode {episodeNumber}',
+  deleteissue: 'Delete Issue',
+  deleteissueconfirm: 'Are you sure you want to delete this issue?',
+  toastissuedeleted: 'Issue deleted succesfully.',
+  toastissuedeletefailed: 'Something went wrong deleting the issue.',
+  nocomments: 'No comments',
 });
 
 const isMovie = (movie: MovieDetails | TvDetails): movie is MovieDetails => {
@@ -67,6 +75,7 @@ const IssueDetails: React.FC = () => {
   const { addToast } = useToasts();
   const router = useRouter();
   const intl = useIntl();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { user: currentUser, hasPermission } = useUser();
   const { data: issueData, revalidate: revalidateIssue } = useSWR<Issue>(
     `/api/v1/issue/${router.query.issueId}`
@@ -135,6 +144,23 @@ const IssueDetails: React.FC = () => {
     }
   };
 
+  const deleteIssue = async () => {
+    try {
+      await axios.delete(`/api/v1/issue/${issueData.id}`);
+
+      addToast(intl.formatMessage(messages.toastissuedeleted), {
+        appearance: 'success',
+        autoDismiss: true,
+      });
+      router.push('/issues');
+    } catch (e) {
+      addToast(intl.formatMessage(messages.toastissuedeletefailed), {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    }
+  };
+
   return (
     <div className="mt-6">
       <PageTitle
@@ -143,6 +169,26 @@ const IssueDetails: React.FC = () => {
           isMovie(data) ? data.title : data.name,
         ]}
       />
+      <Transition
+        enter="transition opacity-0 duration-300"
+        enterFrom="opacity-0"
+        enterTo="opacity-100"
+        leave="transition opacity-100 duration-300"
+        leaveFrom="opacity-100"
+        leaveTo="opacity-0"
+        show={showDeleteModal}
+      >
+        <Modal
+          title={intl.formatMessage(messages.deleteissue)}
+          onCancel={() => setShowDeleteModal(false)}
+          onOk={() => deleteIssue()}
+          okText={intl.formatMessage(messages.deleteissue)}
+          okButtonType="danger"
+          iconSvg={<ExclamationIcon />}
+        >
+          {intl.formatMessage(messages.deleteissueconfirm)}
+        </Modal>
+      </Transition>
       {data.backdropPath && (
         <div className="absolute left-0 right-0 z-0 w-full h-64 pointer-events-none -top-16">
           <div className="media-page-bg-image">
@@ -229,10 +275,12 @@ const IssueDetails: React.FC = () => {
       <div className="relative z-10 flex mt-6 text-gray-300">
         <div className="flex-1 lg:pr-4">
           <IssueDescription
+            issueId={issueData.id}
             description={firstComment.message}
             onEdit={(newMessage) => {
               editFirstComment(newMessage);
             }}
+            onDelete={() => setShowDeleteModal(true)}
           />
           <div className="mt-8 lg:hidden">
             <div className="grid justify-between grid-cols-1 gap-2 mt-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -268,6 +316,11 @@ const IssueDetails: React.FC = () => {
                 onUpdate={() => revalidateIssue()}
               />
             ))}
+            {otherComments.length === 0 && (
+              <div className="mt-4 mb-10 text-gray-400">
+                <span>{intl.formatMessage(messages.nocomments)}</span>
+              </div>
+            )}
             {(hasPermission(Permission.MANAGE_ISSUES) || belongsToUser) && (
               <Formik
                 initialValues={{
