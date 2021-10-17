@@ -58,7 +58,7 @@ const messages = defineMessages({
   deleteconfirm:
     'Are you sure you want to delete this user? All of their request data will be permanently removed.',
   localuser: 'Local User',
-  createlocaluser: 'Create Local User',
+  createlocaluser: 'Create User',
   creating: 'Creating…',
   create: 'Create',
   validationpasswordminchars:
@@ -80,7 +80,7 @@ const messages = defineMessages({
   sortDisplayName: 'Display Name',
   sortRequests: 'Request Count',
   localLoginDisabled:
-    'The <strong>Enable Local Sign-In</strong> setting is currently disabled.',
+    'The <strong>{applicationTitle} Password</strong> sign-in method is currently disabled.',
 });
 
 type Sort = 'created' | 'updated' | 'requests' | 'displayname';
@@ -354,6 +354,8 @@ const UserList: React.FC = () => {
                 {!settings.currentSettings.localLogin && (
                   <Alert
                     title={intl.formatMessage(messages.localLoginDisabled, {
+                      applicationTitle:
+                        settings.currentSettings.applicationTitle,
                       strong: function strong(msg) {
                         return (
                           <strong className="font-semibold text-yellow-100">
