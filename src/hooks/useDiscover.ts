@@ -20,6 +20,7 @@ interface DiscoverResult<T, S> {
   isLoadingInitialData: boolean;
   isLoadingMore: boolean;
   fetchMore: () => void;
+  revalidate: () => void;
   isEmpty: boolean;
   isReachingEnd: boolean;
   error: unknown;
@@ -33,29 +34,28 @@ const useDiscover = <T extends BaseMedia, S = Record<string, never>>(
   { hideAvailable = true } = {}
 ): DiscoverResult<T, S> => {
   const settings = useSettings();
-  const { data, error, size, setSize, isValidating } = useSWRInfinite<
-    BaseSearchResult<T> & S
-  >(
-    (pageIndex: number, previousPageData) => {
-      if (previousPageData && pageIndex + 1 > previousPageData.totalPages) {
-        return null;
+  const { data, error, size, setSize, isValidating, revalidate } =
+    useSWRInfinite<BaseSearchResult<T> & S>(
+      (pageIndex: number, previousPageData) => {
+        if (previousPageData && pageIndex + 1 > previousPageData.totalPages) {
+          return null;
+        }
+
+        const params: Record<string, unknown> = {
+          page: pageIndex + 1,
+          ...options,
+        };
+
+        const finalQueryString = Object.keys(params)
+          .map((paramKey) => `${paramKey}=${params[paramKey]}`)
+          .join('&');
+
+        return `${endpoint}?${finalQueryString}`;
+      },
+      {
+        initialSize: 3,
       }
-
-      const params: Record<string, unknown> = {
-        page: pageIndex + 1,
-        ...options,
-      };
-
-      const finalQueryString = Object.keys(params)
-        .map((paramKey) => `${paramKey}=${params[paramKey]}`)
-        .join('&');
-
-      return `${endpoint}?${finalQueryString}`;
-    },
-    {
-      initialSize: 3,
-    }
-  );
+    );
 
   const isLoadingInitialData = !data && !error;
   const isLoadingMore =
@@ -88,6 +88,7 @@ const useDiscover = <T extends BaseMedia, S = Record<string, never>>(
     isLoadingInitialData,
     isLoadingMore,
     fetchMore,
+    revalidate,
     isEmpty,
     isReachingEnd,
     error,

@@ -126,10 +126,19 @@ discoverRoutes.get<{ genreId: string }>(
       return next({ status: 404, message: 'Unable to retrieve genre' });
     }
 
+    let yearFilter = {};
+    if (req.query.releaseYear) {
+      yearFilter = {
+        primaryReleaseDateGte: `${req.query.releaseYear}-01-01`,
+        primaryReleaseDateLte: `${req.query.releaseYear}-12-30`,
+      };
+    }
+
     const data = await tmdb.getDiscoverMovies({
       page: Number(req.query.page),
       language: req.locale ?? (req.query.language as string),
       genre: Number(req.params.genreId),
+      ...yearFilter,
     });
 
     const media = await Media.getRelatedMedia(
