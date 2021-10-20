@@ -34,6 +34,7 @@ interface DiscoverMovieOptions {
   language?: string;
   primaryReleaseDateGte?: string;
   primaryReleaseDateLte?: string;
+  primaryReleaseYear?: number;
   originalLanguage?: string;
   genre?: number;
   studio?: number;
@@ -371,6 +372,7 @@ class TheMovieDb extends ExternalAPI {
     language = 'en',
     primaryReleaseDateGte,
     primaryReleaseDateLte,
+    primaryReleaseYear,
     originalLanguage,
     genre,
     studio,
@@ -386,6 +388,7 @@ class TheMovieDb extends ExternalAPI {
           with_original_language: originalLanguage ?? this.originalLanguage,
           'primary_release_date.gte': primaryReleaseDateGte,
           'primary_release_date.lte': primaryReleaseDateLte,
+          primary_release_year: primaryReleaseYear,
           with_genres: genre,
           with_companies: studio,
         },
